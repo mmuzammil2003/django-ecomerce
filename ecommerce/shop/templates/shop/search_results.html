@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search Results</title>
+</head>
+<body>
+    <h1>Search Results for "{{ query }}"</h1>
+    {% if results %}
+        <ul>
+            {% for product in results %}
+                <li>{{ product.name }} - {{ product.price }}</li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>No products found matching your query.</p>
+    {% endif %}
+    <a href="{% url 'home' %}">Back to Home</a>
+</body>
+</html>
