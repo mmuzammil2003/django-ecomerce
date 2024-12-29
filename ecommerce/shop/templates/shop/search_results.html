@@ -1,21 +1,161 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Search Results</title>
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
+
+    <script>
+        // Initialize the cart data from localStorage (if available)
+        let cartCount = localStorage.getItem('cartCount') ? parseInt(localStorage.getItem('cartCount')) : 0;
+        let cartItems = JSON.parse(localStorage.getItem('cartItems')) || [];
+
+        // Update the cart count display on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('cart-count').textContent = cartCount;
+        });
+
+        // Function to handle "Add to Cart" button clicks
+        function addToCart(productName, productPrice, productImage) {
+            cartCount++;
+            cartItems.push({
+                name: productName,
+                price: productPrice,
+                image: productImage
+            });
+
+            // Store the updated cart data in localStorage
+            localStorage.setItem('cartCount', cartCount);
+            localStorage.setItem('cartItems', JSON.stringify(cartItems));
+
+            // Update the cart count display
+            document.getElementById('cart-count').textContent = cartCount;
+        }
+
+        // Show the cart items in the modal
+        function showCart() {
+            const cartList = document.getElementById('cart-items-list');
+            cartList.innerHTML = ''; // Clear existing items
+
+            cartItems.forEach(item => {
+                const listItem = document.createElement('li');
+                listItem.innerHTML = `
+                    <img src="${item.image}" alt="${item.name}" style="width: 50px; height: 50px; object-fit: cover; margin-right: 10px;">
+                    ${item.name} - $${item.price}
+                `;
+                cartList.appendChild(listItem);
+            });
+        }
+
+        // JavaScript for text-to-speech
+        function speakText(text) {
+            if (!('speechSynthesis' in window)) {
+                alert('Your browser does not support text-to-speech. Please use Chrome or another compatible browser.');
+                return;
+            }
+
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'en-US';
+            window.speechSynthesis.speak(utterance);
+        }
+
+        // Automatically describe the products
+        window.onload = function () {
+            const results = {{ results_json|safe }}; // Use JSON stringified results from Django
+            if (results.length > 0) {
+                let descriptionText = results
+                    .map(result => `${result.name}: ${result.description}`)
+                    .join('. ');
+
+                speakText(descriptionText);
+            }
+        };
+    </script>
 </head>
 <body>
-    <h1>Search Results for "{{ query }}"</h1>
-    {% if results %}
-        <ul>
-            {% for product in results %}
-                <li>{{ product.name }} - {{ product.price }}</li>
-            {% endfor %}
-        </ul>
-    {% else %}
-        <p>No products found matching your query.</p>
-    {% endif %}
-    <a href="{% url 'home' %}">Back to Home</a>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="{% url 'home' %}">Shop</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="{% url 'home' %}">Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'search' %}">Products</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#">Contact</a>
+                    </li>
+                </ul>
+                <a href="#" class="btn btn-outline-primary position-relative" data-bs-toggle="modal" data-bs-target="#cartModal" onclick="showCart()">
+                    <i class="bi bi-cart"></i> Cart
+                    <span id="cart-count" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                        0
+                    </span>
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-5">
+        <h1 class="mb-4">Search Results for "{{ query }}"</h1>
+        {% if results %}
+            <div class="row">
+                {% for product in results %}
+                <div class="col-md-4 mb-4">
+                    <div class="card h-100">
+                        <img src="{% static product.image %}" class="card-img-top" alt="{{ product.name }}" style="max-height: 200px; object-fit: cover;">
+                        <div class="card-body">
+                            <h5 class="card-title">{{ product.name }}</h5>
+                            <p class="card-text">{{ product.description }}</p>
+                            <p><strong>Price:</strong> {{ product.price }}</p>
+                            <button class="btn btn-primary" onclick="addToCart('{{ product.name }}', '{{ product.price }}', '{% static product.image %}')">Add to Cart</button>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="text-danger">No products found matching your query.</p>
+        {% endif %}
+        <a href="{% url 'home' %}" class="btn btn-secondary mt-3">Back to Home</a>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
+
+    <!-- Modal for cart details -->
+    <div class="modal fade" id="cartModal" tabindex="-1" aria-labelledby="cartModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="cartModalLabel">Your Cart</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <ul id="cart-items-list">
+                        <!-- Cart items will be listed here -->
+                    </ul>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary">Proceed to Checkout</button>
+                </div>
+            </div>
+        </div>
+    </div>
 </body>
 </html>

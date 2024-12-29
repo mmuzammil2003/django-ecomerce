@@ -1,0 +1,131 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Cart</title>
+
+    <!-- CSS Styles -->
+    <style>
+        /* General Styles */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+
+        .container {
+            width: 80%;
+            margin: 0 auto;
+        }
+
+        /* Cart Items */
+        .cart-items {
+            list-style: none;
+            padding: 0;
+        }
+
+        .cart-items li {
+            display: flex;
+            align-items: center;
+            border-bottom: 1px solid #ddd;
+            padding: 15px 0;
+        }
+
+        .cart-items img {
+            width: 100px;
+            height: 100px;
+            object-fit: cover;
+            margin-right: 20px;
+        }
+
+        .cart-items p {
+            margin: 0;
+            padding: 5px 0;
+        }
+
+        .cart-items .product-name {
+            font-weight: bold;
+        }
+
+        .cart-items .product-info {
+            font-size: 14px;
+        }
+
+        .cart-items .total-price {
+            font-weight: bold;
+            color: green;
+        }
+
+        /* Total Price Section */
+        .total-price-section {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .total-price-section p {
+            margin: 0;
+        }
+
+        .total-price-section .total-price {
+            font-size: 18px;
+            color: #333;
+        }
+
+        /* Links */
+        a {
+            color: #333;
+            text-decoration: none;
+            padding: 10px;
+            background-color: #333;
+            color: white;
+            border-radius: 5px;
+            display: inline-block;
+            margin-top: 20px;
+        }
+
+        a:hover {
+            background-color: #555;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>My Cart</h1>
+
+        {% if cart_items %}
+            <ul class="cart-items">
+                {% for item in cart_items %}
+                    <li>
+                        <img src="{% static item.product.image.url %}" alt="{{ item.product.name }}">
+                        <div>
+                            <p class="product-name">{{ item.product.name }}</p>
+                            <p class="product-info">Quantity: {{ item.quantity }}</p>
+                            <p class="product-info">Price: {{ item.product.price }}</p>
+                            <p class="total-price">Total: {{ item.total_price }}</p>
+                        </div>
+                    </li>
+                {% endfor %}
+            </ul>
+
+            <div class="total-price-section">
+                <p>Total Price:</p>
+                <p class="total-price">{{ total_price }}</p>
+            </div>
+        {% else %}
+            <p>Your cart is empty.</p>
+        {% endif %}
+
+        <a href="{% url 'home' %}">Back to Shop</a>
+    </div>
+</body>
+</html>

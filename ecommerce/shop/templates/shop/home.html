@@ -1,15 +1,162 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Home</title>
+
+    <!-- CSS Styles -->
+    <style>
+        /* General Styles */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 2.5rem;
+            color: #333;
+        }
+
+        /* Search Form Styles */
+        #searchForm {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: 20px;
+            padding: 10px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            max-width: 600px;
+            width: 100%;
+        }
+
+        #searchForm input[type="text"] {
+            padding: 10px;
+            font-size: 1rem;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            flex-grow: 1;
+            margin-right: 10px;
+        }
+
+        #searchForm button {
+            padding: 10px 15px;
+            background-color: #333;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+
+        #searchForm button:hover {
+            background-color: #555;
+        }
+
+        #searchForm button:focus {
+            outline: none;
+        }
+
+        /* Voice Button */
+        #searchForm button[type="button"] {
+            background-color: #ff5722;
+        }
+
+        #searchForm button[type="button"]:hover {
+            background-color: #e64a19;
+        }
+
+        /* Advertisement Section */
+        .advertisements {
+            margin-top: 20px;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .advertisement {
+            width: 250px;
+            height: 150px;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .advertisement img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+    </style>
 </head>
 <body>
     <h1>Welcome to the Shop</h1>
-    <form method="GET" action="{% url 'search' %}">
-        <input type="text" name="query" placeholder="Search for products" required>
+    
+    <form id="searchForm" method="GET" action="{% url 'search' %}">
+        <input id="searchQuery" type="text" name="query" placeholder="Search for products" required>
         <button type="submit">Search</button>
+        <!-- Voice button -->
+        <button type="button" onclick="startVoiceRecognition()">🎤 Voice Search</button>
     </form>
+
+    <!-- Advertisements Section -->
+    <div class="advertisements">
+        <div class="advertisement">
+            <img src="{% static 'shop/images/sale2.jpeg' %}" alt="Ad 1">
+        </div>
+        <div class="advertisement">
+            <img src="{% static 'shop/images/sale3.jpg' %}" alt="Ad 2">
+        </div>
+        <div class="advertisement">
+            <img src="{% static 'shop/images/sale4.jpg' %}" alt="Ad 3">
+        </div>
+    </div>
+
+    <script>
+        // JavaScript for voice recognition
+        function startVoiceRecognition() {
+            if (!('webkitSpeechRecognition' in window)) {
+                alert('Your browser does not support voice recognition. Please use Chrome or another compatible browser.');
+                return;
+            }
+
+            const recognition = new webkitSpeechRecognition();
+            recognition.lang = 'en-US';
+            recognition.interimResults = false;
+            recognition.maxAlternatives = 1;
+
+            recognition.onstart = function () {
+                console.log('Voice recognition started...');
+            };
+
+            recognition.onspeechend = function () {
+                recognition.stop();
+            };
+
+            recognition.onresult = function (event) {
+                const query = event.results[0][0].transcript;
+                console.log('Voice Input:', query);
+                document.getElementById('searchQuery').value = query; // Set the input field
+                document.getElementById('searchForm').submit(); // Automatically submit the form
+            };
+
+            recognition.onerror = function (event) {
+                console.error('Voice recognition error:', event.error);
+            };
+
+            recognition.start();
+        }
+    </script>
 </body>
 </html>
