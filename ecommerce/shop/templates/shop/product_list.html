@@ -4,17 +4,18 @@
 {% block content %}
 <div class="container">
     <h1 class="title">Products</h1>
-    <div class="products-grid">
+    <div class="products-grid" id="products-grid">
         {% for product in products %}
-        <div class="product-card">
+        <div class="product-card" id="product-{{ product.id }}" data-name="{{ product.name }}">
             <img src="{{ product.image.url }}" alt="{{ product.name }}" class="product-image">
             <h2 class="product-name">{{ product.name }}</h2>
             <p class="product-price">$ {{ product.price }}</p>
             <p class="product-description">{{ product.description|truncatechars:100 }}</p>
-            <a href="{% url 'add_to_cart' product.id %}" class="btn">Add to Cart</a>
+            <a href="{% url 'add_to_cart' product.id %}" class="btn add-to-cart" data-id="{{ product.id }}">Add to Cart</a>
         </div>
         {% endfor %}
     </div>
+    <button class="voice-btn" onclick="startVoiceControl()">🎙️ Voice Control</button>
 </div>
 
 <!-- Inline CSS -->
@@ -99,5 +100,77 @@
     .btn:focus {
         outline: none;
     }
+
+    .voice-btn {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        background-color: #007bff;
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 60px;
+        height: 60px;
+        font-size: 1.5rem;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        cursor: pointer;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .voice-btn:hover {
+        background-color: #0056b3;
+    }
 </style>
+
+<!-- JavaScript for Voice Control -->
+<script>
+    function startVoiceControl() {
+        if (!('webkitSpeechRecognition' in window)) {
+            alert('Voice control is not supported in your browser. Please use Chrome.');
+            return;
+        }
+
+        const recognition = new webkitSpeechRecognition();
+        recognition.lang = 'en-US';
+        recognition.interimResults = false;
+        recognition.maxAlternatives = 1;
+
+        recognition.start();
+
+        recognition.onresult = function (event) {
+            const command = event.results[0][0].transcript.toLowerCase();
+            handleVoiceCommand(command);
+        };
+
+        recognition.onerror = function (event) {
+            console.error('Speech recognition error:', event.error);
+            alert('Error with voice recognition. Please try again.');
+        };
+    }
+
+    function handleVoiceCommand(command) {
+        console.log('Voice command:', command);
+
+        const productCards = document.querySelectorAll('.product-card');
+        let matched = false;
+
+        productCards.forEach((card) => {
+            const productName = card.dataset.name.toLowerCase();
+            if (command.includes('add to cart') && command.includes(productName)) {
+                const button = card.querySelector('.add-to-cart');
+                if (button) {
+                    matched = true;
+                    window.location.href = button.href; // Simulate clicking the button
+                    alert(`${productName} has been added to your cart!`);
+                }
+            }
+        });
+
+        if (!matched) {
+            alert('No matching product found for your command.');
+        }
+    }
+</script>
 {% endblock %}

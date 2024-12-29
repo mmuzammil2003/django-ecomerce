@@ -17,12 +17,12 @@
         // Initialize the cart data from localStorage (if available)
         let cartCount = localStorage.getItem('cartCount') ? parseInt(localStorage.getItem('cartCount')) : 0;
         let cartItems = JSON.parse(localStorage.getItem('cartItems')) || [];
-
+    
         // Update the cart count display on page load
         document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('cart-count').textContent = cartCount;
         });
-
+    
         // Function to handle "Add to Cart" button clicks
         function addToCart(productName, productPrice, productImage) {
             cartCount++;
@@ -31,20 +31,20 @@
                 price: productPrice,
                 image: productImage
             });
-
+    
             // Store the updated cart data in localStorage
             localStorage.setItem('cartCount', cartCount);
             localStorage.setItem('cartItems', JSON.stringify(cartItems));
-
+    
             // Update the cart count display
             document.getElementById('cart-count').textContent = cartCount;
         }
-
+    
         // Show the cart items in the modal
         function showCart() {
             const cartList = document.getElementById('cart-items-list');
             cartList.innerHTML = ''; // Clear existing items
-
+    
             cartItems.forEach(item => {
                 const listItem = document.createElement('li');
                 listItem.innerHTML = `
@@ -54,19 +54,19 @@
                 cartList.appendChild(listItem);
             });
         }
-
+    
         // JavaScript for text-to-speech
         function speakText(text) {
             if (!('speechSynthesis' in window)) {
                 alert('Your browser does not support text-to-speech. Please use Chrome or another compatible browser.');
                 return;
             }
-
+    
             const utterance = new SpeechSynthesisUtterance(text);
             utterance.lang = 'en-US';
             window.speechSynthesis.speak(utterance);
         }
-
+    
         // Automatically describe the products
         window.onload = function () {
             const results = {{ results_json|safe }}; // Use JSON stringified results from Django
@@ -74,11 +74,60 @@
                 let descriptionText = results
                     .map(result => `${result.name}: ${result.description}`)
                     .join('. ');
-
+    
                 speakText(descriptionText);
             }
         };
-    </script>
+    
+        // Set up voice recognition
+        const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+        recognition.lang = 'en-US';
+        recognition.continuous = false;
+        recognition.interimResults = false;
+    
+        // Voice command processing
+        function processVoiceCommand(command) {
+            const commandLower = command.toLowerCase();
+    
+            // Check if the user says "back to home"
+            if (commandLower.includes("back to home")) {
+                window.location.href = "{% url 'home' %}";
+                return;
+            }
+    
+            // Match commands like "add to cart watch"
+            const regex = /add to cart (\w+)/; // Matches commands like "add to cart watch"
+            const match = commandLower.match(regex);
+    
+            if (match && match[1]) {
+                const productName = match[1].trim();
+                const product = results.find(item => item.name.toLowerCase().includes(productName.toLowerCase()));
+    
+                if (product) {
+                    addToCart(product.name, product.price, product.image);
+                    speakText(`${product.name} has been added to your cart.`);
+                } else {
+                    speakText("Sorry, I couldn't find that product.");
+                }
+            } else {
+                speakText("Sorry, I didn't understand the command.");
+            }
+        }
+    
+        // Listen for voice command when the voice button is clicked
+        function startVoiceRecognition() {
+            recognition.start();
+            recognition.onresult = function(event) {
+                const command = event.results[0][0].transcript;
+                console.log('Voice Command:', command);  // Log the recognized command
+                processVoiceCommand(command);
+            };
+    
+            recognition.onerror = function(event) {
+                speakText("Sorry, there was an error recognizing your speech.");
+            };
+        }
+    </script>    
 </head>
 <body>
     <!-- Navbar -->
@@ -133,6 +182,9 @@
         {% endif %}
         <a href="{% url 'home' %}" class="btn btn-secondary mt-3">Back to Home</a>
     </div>
+
+    <!-- Voice Control Button -->
+    <button class="btn btn-danger" onclick="startVoiceRecognition()">Voice control</button>
 
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
