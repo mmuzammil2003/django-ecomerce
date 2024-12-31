@@ -64,19 +64,33 @@ def user_logout(request):
 
 # Mock PRODUCTS list for testing
 PRODUCTS = [
-    {"name": "perfume", "price": "10.00", "image": "/shop/images/perfume.jpg", "description": "This is a refreshing fragrance with vibrant citrus notes, offering a burst of zest. The scent settles into a crisp, airy base, leaving a light, breezy finish for an invigorating and fresh experience."},
-    {"name": "Perfume2", "price": "15.00", "image": "/shop/images/perfume2.webp", "description": "Eternity perfume with a rich wood scent, blending timeless elegance with earthy notes for a sophisticated and enduring fragrance."},
-    {"name": "shoe", "price": "20.00", "image": "/shop/images/shoe.jpeg", "description": "Adidas sports shoes designed for comfort and performance, perfect for athletes and active individuals who demand both style and functionality."},
-    {"name": "search shoes", "price": "20.00", "image": "/shop/images/shoe.jpeg", "description": "Comfortable running shoes designed to provide optimal support and flexibility for your workouts, offering both comfort and durability."},
-    {"name": "search perfumes", "price": "10.00", "image": "/shop/images/perfume.jpg", "description": "A floral perfume with refreshing citrus top notes, creating a vibrant and light fragrance that’s perfect for everyday wear."},
-    {"name": "search watch", "price": "20.00", "image": "/shop/images/watch.png", "description": "Fossil analog watch featuring a classic design and precise craftsmanship, combining style with functionality for any occasion."},
-    {"name": "search watch", "price": "10.00", "image": "/shop/images/watch2.jpg", "description": "Branded analog watch with a sleek design, offering a timeless look that pairs well with both formal and casual outfits."},
-    {"name": "headphone", "price": "25.0", "image": "/shop/images/headphone.png", "description": "Branded headphones providing high-quality sound and comfort, designed for music lovers and audiophiles who appreciate premium audio performance."},
+    {"name": "Perfume", "price": "10.00", "image": "/shop/images/perfume.jpg", "description": "This is a refreshing fragrance featuring vibrant citrus top notes like lemon and orange, blended with delicate floral hints of jasmine and rose. The scent transitions smoothly into a light, airy base of musk and cedarwood, offering a crisp and breezy finish that creates a refreshing and uplifting experience throughout the day."},
+    
+    {"name": "Perfume2", "price": "15.00", "image": "/shop/images/perfume2.webp", "description": "Eternity perfume with a rich and sophisticated scent profile, starting with earthy notes of sandalwood and cedar, complemented by warm hints of amber and musk. Its timeless elegance is further elevated by subtle floral undertones, making it a perfect choice for those who appreciate an enduring and classy fragrance."},
+    
+    {"name": "Shoe", "price": "20.00", "image": "/shop/images/shoe.jpeg", "description": "Adidas sports shoes designed with advanced cushioning and breathable mesh fabric for maximum comfort during workouts. The lightweight design ensures agility, while the durable rubber sole provides excellent grip on various surfaces. Ideal for athletes, runners, or anyone leading an active lifestyle."},
+    
+    {"name": "Search Shoes", "price": "20.00", "image": "/shop/images/shoe.jpeg", "description": "Comfortable running shoes with a soft insole and a flexible design that adapts to your foot’s natural movement. Featuring a stylish and modern look, these shoes provide optimal support for long-distance runs or daily walks, ensuring both durability and performance."},
+    
+    {"name": "Search Perfumes", "price": "10.00", "image": "/shop/images/perfume.jpg", "description": "A vibrant floral perfume with refreshing citrus top notes of bergamot and grapefruit, balanced by a heart of peony and lily. The fragrance settles into a subtle woody base, making it an ideal choice for casual outings or daily wear, leaving a light and cheerful impression."},
+    
+    {"name": "Search Watch", "price": "20.00", "image": "/shop/images/watch.png", "description": "A Fossil analog watch featuring a polished stainless steel case and a sophisticated leather strap. The minimalist design is paired with a clear and easy-to-read dial, making it suitable for both formal and casual occasions. Its precise quartz movement ensures reliable timekeeping."},
+    
+    {"name": "Search Watch", "price": "10.00", "image": "/shop/images/watch2.jpg", "description": "A branded analog watch with a sleek and modern design, featuring a lightweight yet sturdy metal body. The elegant face includes subtle markers for a timeless aesthetic, perfectly balancing functionality and style for any wardrobe."},
+    
+    {"name": "Headphone", "price": "25.00", "image": "/shop/images/headphone.png", "description": "Premium branded headphones with high-quality sound performance. The cushioned ear cups provide excellent comfort for extended listening sessions, while the adjustable headband ensures a perfect fit. These headphones deliver deep bass and crystal-clear audio, making them ideal for music enthusiasts, gamers, and professionals alike."},
     {"name": "The Psychology of Marketing", "price": "15.0", "image": "/shop/images/book_harindersingh.jpg", "description": "An insightful audiobook by Harinder Singh Pelia that explores how marketers use psychological strategies to influence consumer behavior. Perfect for visually impaired individuals, this audiobook reveals the hidden tricks of marketing through clear and engaging narration, making it accessible to everyone who wants to understand the art of persuasion and buying habits."},
-    {"name": "Talking Clock", "price": "20.0", "image": "/shop/images/talkingclock.jpg", "description": "A convenient and accessible talking clock designed for visually impaired individuals. It announces the time audibly at the press of a button and has an easy-to-use interface with tactile buttons. Ideal for daily use, it also includes alarm and time announcement features for enhanced functionality."}
-
-
+    {"name": "Talking Clock", "price": "20.0", "image": "/shop/images/talkingclock.jpg", "description": "A convenient and accessible talking clock designed for visually impaired individuals. It announces the time audibly at the press of a button and has an easy-to-use interface with tactile buttons. Ideal for daily use, it also includes alarm and time announcement features for enhanced functionality."},
+    
+    {"name": "Toothpaste", "price": "3.00", "image": "/shop/images/paste.jpg", "description": "A refreshing mint-flavored toothpaste, smooth in texture, with a clean, crisp taste that leaves your mouth feeling fresh. It has a slight cooling sensation and is formulated with fluoride to help protect your teeth from cavities and strengthen enamel. Imagine the feeling of brushing your teeth with a minty breeze, leaving your mouth feeling thoroughly cleansed and invigorated."},
+    {"name": "Soap", "price": "2.50", "image": "/shop/images/soap.jpg", "description": "This moisturizing soap is infused with the gentle, calming scent of aloe vera and coconut oil. As you lather it, you can feel the smoothness of the foam gliding over your skin, leaving it soft and hydrated. The soap is creamy and rich, providing a gentle, soothing touch, with a scent that lingers lightly, making your skin feel refreshed and cared for."},
+    {"name": "Clothes", "price": "25.00", "image": "/shop/images/clothes1.jpg", "description": "Made of soft, breathable cotton, these clothes offer the perfect balance of comfort and style. The fabric feels light and airy on your skin, allowing you to move freely. Whether you’re wearing a shirt, dress, or pants, the clothes have a relaxed fit, providing ease and flexibility for daily activities. They’re designed with simple, yet elegant lines that hug the body comfortably, giving you a sense of both casual ease and stylish confidence."},
+    {"name": "Towel", "price": "8.00", "image": "/shop/images/towel.jpg", "description": "Soft, absorbent cotton towel with a plush texture and reinforced edges for durability."}
 ]
+
+
+
+
 
 # Search functionality
 def search(request):
