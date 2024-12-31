@@ -20,5 +20,6 @@ urlpatterns = [
     path('products/', views.product_list, name='product_list'),  # Product list
     path('add_to_cart/<int:product_id>/', views.add_to_cart, name='add_to_cart'),  # Add to cart
     path('cart/', views.view_cart, name='view_cart'),  # Cart page
+    path('create-checkout-session', views.create_checkout_session, name='create-checkout-session'),
 ]
 

@@ -6,7 +6,9 @@ from django.http import JsonResponse
 from django.contrib.auth.models import User
 from .models import Product, Cart
 from .forms import SignUpForm
+from django.views.decorators.csrf import csrf_exempt
 import json
+import stripe
 
 # Home page with products
 def home(request):
@@ -62,16 +64,15 @@ def user_logout(request):
 
 # Mock PRODUCTS list for testing
 PRODUCTS = [
-    {"name": "perfume", "price": "$10.00", "image": "/shop/images/perfume.jpg", "description": "This is a refreshing fragrance with vibrant citrus notes, offering a burst of zest. The scent settles into a crisp, airy base, leaving a light, breezy finish for an invigorating and fresh experience."},
-    {"name": "Perfume2", "price": "$15.00", "image": "/shop/images/perfume2.webp", "description": "Eternity perfume with a rich wood scent, blending timeless elegance with earthy notes for a sophisticated and enduring fragrance."},
-    {"name": "shoe", "price": "$20.00", "image": "/shop/images/shoe.jpeg", "description": "Adidas sports shoes designed for comfort and performance, perfect for athletes and active individuals who demand both style and functionality."},
-    {"name": "search shoes", "price": "$20.00", "image": "/shop/images/shoe.jpeg", "description": "Comfortable running shoes designed to provide optimal support and flexibility for your workouts, offering both comfort and durability."},
-    {"name": "search perfumes", "price": "$10.00", "image": "/shop/images/perfume.jpg", "description": "A floral perfume with refreshing citrus top notes, creating a vibrant and light fragrance that’s perfect for everyday wear."},
-    {"name": "search watch", "price": "$20.00", "image": "/shop/images/watch.png", "description": "Fossil analog watch featuring a classic design and precise craftsmanship, combining style with functionality for any occasion."},
-    {"name": "search watch", "price": "$10.00", "image": "/shop/images/watch2.jpg", "description": "Branded analog watch with a sleek design, offering a timeless look that pairs well with both formal and casual outfits."},
-    {"name": "headphone", "price": "$25.0", "image": "/shop/images/headphone.png", "description": "Branded headphones providing high-quality sound and comfort, designed for music lovers and audiophiles who appreciate premium audio performance."}
+    {"name": "perfume", "price": "10.00", "image": "/shop/images/perfume.jpg", "description": "This is a refreshing fragrance with vibrant citrus notes, offering a burst of zest. The scent settles into a crisp, airy base, leaving a light, breezy finish for an invigorating and fresh experience."},
+    {"name": "Perfume2", "price": "15.00", "image": "/shop/images/perfume2.webp", "description": "Eternity perfume with a rich wood scent, blending timeless elegance with earthy notes for a sophisticated and enduring fragrance."},
+    {"name": "shoe", "price": "20.00", "image": "/shop/images/shoe.jpeg", "description": "Adidas sports shoes designed for comfort and performance, perfect for athletes and active individuals who demand both style and functionality."},
+    {"name": "search shoes", "price": "20.00", "image": "/shop/images/shoe.jpeg", "description": "Comfortable running shoes designed to provide optimal support and flexibility for your workouts, offering both comfort and durability."},
+    {"name": "search perfumes", "price": "10.00", "image": "/shop/images/perfume.jpg", "description": "A floral perfume with refreshing citrus top notes, creating a vibrant and light fragrance that’s perfect for everyday wear."},
+    {"name": "search watch", "price": "20.00", "image": "/shop/images/watch.png", "description": "Fossil analog watch featuring a classic design and precise craftsmanship, combining style with functionality for any occasion."},
+    {"name": "search watch", "price": "10.00", "image": "/shop/images/watch2.jpg", "description": "Branded analog watch with a sleek design, offering a timeless look that pairs well with both formal and casual outfits."},
+    {"name": "headphone", "price": "25.0", "image": "/shop/images/headphone.png", "description": "Branded headphones providing high-quality sound and comfort, designed for music lovers and audiophiles who appreciate premium audio performance."}
 ]
-
 
 # Search functionality
 def search(request):
@@ -145,3 +146,78 @@ def remove_from_cart(request, cart_item_id):
     except Cart.DoesNotExist:
         messages.error(request, "Item not found in cart!")
     return redirect('view_cart')
+
+# Select payment method
+@login_required
+@csrf_exempt
+def select_payment_method(request):
+    if request.method == 'POST':
+        cart_item_id = request.POST.get('cart_item_id')
+        payment_method = request.POST.get('payment_method')
+
+        if payment_method not in ['COD', 'Online']:
+            return JsonResponse({'message': 'Invalid payment method selected!'}, status=400)
+
+        try:
+            cart_item = Cart.objects.get(id=cart_item_id, user=request.user)
+            cart_item.payment_method = payment_method
+            cart_item.save()
+            return JsonResponse({'message': f'Payment method set to {payment_method} successfully!'})
+        except Cart.DoesNotExist:
+            return JsonResponse({'message': 'Cart item not found!'}, status=404)
+    return JsonResponse({'message': 'Invalid request!'}, status=400)
+
+# Process online payment
+@login_required
+def process_online_payment(request, cart_item_id):
+    try:
+        cart_item = Cart.objects.get(id=cart_item_id, user=request.user)
+        # Simulate payment processing (replace with actual payment gateway integration)
+        payment_success = True  # Simulate a successful payment
+
+        if payment_success:
+            cart_item.payment_method = 'Online'
+            cart_item.save()
+            messages.success(request, "Payment successful!")
+        else:
+            messages.error(request, "Payment failed!")
+        return redirect('view_cart')
+    except Cart.DoesNotExist:
+        messages.error(request, "Cart item not found!")
+        return redirect('view_cart')
+import stripe
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+import json
+
+stripe.api_key = 'sk_test_51Qc1LIFlNATJ2G6NyGajxCNOvYJkb2mEuceLnAdneunl5sxm31NZPP0bJrd3A4a5nTMXCKGvB9W6DPaGbD8CrGHT00Ldox6xij'  # Replace with your Stripe secret key
+
+@csrf_exempt
+def create_checkout_session(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            item = data['item']
+            
+            # Create a Stripe Checkout Session
+            session = stripe.checkout.Session.create(
+                payment_method_types=['card'],
+                line_items=[{
+                    'price_data': {
+                        'currency': 'usd',
+                        'product_data': {
+                            'name': item['name'],
+                        },
+                        'unit_amount': int(float(item['price']) * 100),  # Convert price to cents
+                    },
+                    'quantity': 1,
+                }],
+                mode='payment',
+                success_url='http://127.0.0.1:8000/success',  # Replace with your success URL
+                cancel_url='http://127.0.0.1:8000/cancel',    # Replace with your cancel URL
+            )
+            return JsonResponse({'id': session.id})
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=400)
+    else:
+        return JsonResponse({'error': 'Invalid request method'}, status=400)
