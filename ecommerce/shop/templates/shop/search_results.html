@@ -157,51 +157,58 @@ async function handleCartVoiceInteraction() {
         recognition.interimResults = false;
 
         function processVoiceCommand(command) {
-            const commandLower = command.toLowerCase();
+    const commandLower = command.toLowerCase();
+    console.log("Processing command: ", commandLower); // Debugging
 
-            if (commandLower.includes("back to home")) {
-                window.location.href = "{% url 'home' %}";
-                return;
-            }
+    if (commandLower.includes("back to home")) {
+        window.location.href = "{% url 'home' %}";
+        return;
+    }
 
-            if (commandLower.includes("show cart")) {
-                showCart();
-                const cartModal = new bootstrap.Modal(document.getElementById('cartModal'));
-                cartModal.show();
-                speakText("Here are the items in your cart.");
-                return;
-            }
+    if (commandLower.includes("show cart")) {
+        showCart();
+        const cartModal = new bootstrap.Modal(document.getElementById('cartModal'));
+        cartModal.show();
+        speakText("Here are the items in your cart.");
+        return;
+    }
 
-            const regex = /add to cart (.+)/;
-            const match = commandLower.match(regex);
+    const regex = /add to cart (.+)/;
+    const match = commandLower.match(regex);
 
-            if (match && match[1]) {
-                const productName = match[1].trim();
-                const results = JSON.parse('{{ results_json|escapejs }}');
-                const product = results.find(item => item.name.toLowerCase().includes(productName.toLowerCase()));
+    if (match && match[1]) {
+        const productName = match[1].trim();
+        console.log("Looking for product:", productName); // Debugging
+        const results = JSON.parse('{{ results_json|escapejs }}');
+        const product = results.find(item => item.name.toLowerCase().includes(productName.toLowerCase()));
 
-                if (product) {
-                    addToCart(product.name, product.price, product.image);
-                    speakText(`${product.name} has been added to your cart.`);
-                } else {
-                    speakText("Sorry, I couldn't find that product.");
-                }
-            } else {
-                speakText("Sorry, I didn't understand the command.");
-            }
+        if (product) {
+            addToCart(product.name, product.price, product.image);
+            speakText(`${product.name} has been added to your cart.`);
+        } else {
+            speakText("Sorry, I couldn't find that product.");
         }
+    } else {
+        speakText("Sorry, I didn't understand the command.");
+    }
+}
 
-        function startVoiceRecognition() {
-            recognition.start();
-            recognition.onresult = function(event) {
-                const command = event.results[0][0].transcript;
-                processVoiceCommand(command);
-            };
 
-            recognition.onerror = function(event) {
-                speakText("Sorry, there was an error recognizing your speech.");
-            };
-        }
+function startVoiceRecognition() {
+    // Stop any ongoing speech synthesis before starting new voice recognition
+    window.speechSynthesis.cancel();
+
+    recognition.start();
+    recognition.onresult = function(event) {
+        const command = event.results[0][0].transcript;
+        processVoiceCommand(command);
+    };
+
+    recognition.onerror = function(event) {
+        speakText("Sorry, there was an error recognizing your speech.");
+    };
+}
+
         let purchasedItems = JSON.parse(localStorage.getItem('purchasedItems')) || []; // Initialize purchased items array
 
         async function buyItem(index) {
@@ -216,29 +223,161 @@ async function handleCartVoiceInteraction() {
 
         console.log(cleanItem); // Debugging to confirm the object being sent
 
-        const paymentSuccessful = await startPaymentProcess(cleanItem); // Start the payment process
+        // Ask the user to choose a payment method (Cash on Delivery or Online)
+        speakText("Do you want to pay by Cash on Delivery or Online? Please say 'Cash on Delivery' or 'Online'.");
+        const paymentMethod = await listenForPaymentMethod();
 
-        if (paymentSuccessful) {
-            // Add the purchased item to the purchasedItems array
-            purchasedItems.push(cleanItem);
-            localStorage.setItem('purchasedItems', JSON.stringify(purchasedItems)); // Save to localStorage
+        if (paymentMethod === "cash on delivery") {
+            await handleCashOnDelivery(cleanItem);
+            // No need to say "Payment Successful" for Cash on Delivery
+            speakText("Your order has been placed with Cash on Delivery.");
+        } else if (paymentMethod === "online") {
+            const paymentSuccessful = await startPaymentProcess(cleanItem); // Start the payment process
 
-            // Remove the item from the cart
-            cartItems.splice(index, 1);
-            localStorage.setItem('cartItems', JSON.stringify(cartItems)); // Update localStorage
+            if (paymentSuccessful) {
+                // Add the purchased item to the purchasedItems array
+                purchasedItems.push(cleanItem);
+                localStorage.setItem('purchasedItems', JSON.stringify(purchasedItems)); // Save to localStorage
 
-            // Update the UI
-            document.getElementById('cart-count').textContent = cartItems.length; // Update cart count
-            showCart(); // Refresh the cart UI
-            showPurchasedItems(); // Refresh the purchased items UI
+                // Remove the item from the cart
+                cartItems.splice(index, 1);
+                localStorage.setItem('cartItems', JSON.stringify(cartItems)); // Update localStorage
 
-            // Speak confirmation
-            speakText(`${cleanItem.name} has been successfully purchased.`);
+                // Update the UI
+                document.getElementById('cart-count').textContent = cartItems.length; // Update cart count
+                showCart(); // Refresh the cart UI
+                showPurchasedItems(); // Refresh the purchased items UI
+
+                // Speak confirmation for online payment
+                speakText(`${cleanItem.name} has been successfully purchased.`);
+            } else {
+                speakText("Payment was unsuccessful. Please try again.");
+            }
         } else {
-            speakText("Payment was unsuccessful. Please try again.");
+            speakText("Sorry, I didn't understand. Please say 'Cash on Delivery' or 'Online'.");
         }
     }
 }
+async function handleCashOnDelivery(item) {
+    speakText("Please provide your address for Cash on Delivery.");
+
+    const address = await listenForAddress();
+    if (!address) {
+        speakText("Address is missing. Please provide a valid address.");
+        return;
+    }
+
+    speakText("Please provide your contact number.");
+    const contact = await listenForContact();
+    if (!contact) {
+        speakText("Contact number is missing. Please provide a valid contact number.");
+        return;
+    }
+
+    speakText("Please provide your main city.");
+    const city = await listenForCity();
+    if (!city) {
+        speakText("City is missing. Please provide a valid city.");
+        return;
+    }
+
+    speakText("Do you want to place the order? Say 'Place Order' to confirm.");
+    const confirmOrder = await listenForPlaceOrder();
+
+    if (confirmOrder === "place order") {
+        speakText("Your order has been placed successfully.");
+        // Save order details to localStorage or send it to the server
+        // Redirect to the home page after placing the order
+        window.location.href = '/home'; // Redirect to the homepage
+    } else {
+        speakText("Order not placed. Please try again.");
+    }
+}
+function listenForAddress() {
+    return new Promise((resolve) => {
+        recognition.start();
+        recognition.onresult = function(event) {
+            recognition.stop();
+            const address = event.results[0][0].transcript;
+            resolve(address);
+        };
+        recognition.onerror = function() {
+            recognition.stop();
+            resolve(null);
+        };
+    });
+}
+
+function listenForContact() {
+    return new Promise((resolve) => {
+        recognition.start();
+        recognition.onresult = function(event) {
+            recognition.stop();
+            const contact = event.results[0][0].transcript;
+            resolve(contact);
+        };
+        recognition.onerror = function() {
+            recognition.stop();
+            resolve(null);
+        };
+    });
+}
+
+function listenForCity() {
+    return new Promise((resolve) => {
+        recognition.start();
+        recognition.onresult = function(event) {
+            recognition.stop();
+            const city = event.results[0][0].transcript;
+            resolve(city);
+        };
+        recognition.onerror = function() {
+            recognition.stop();
+            resolve(null);
+        };
+    });
+}
+
+function listenForPlaceOrder() {
+    return new Promise((resolve) => {
+        recognition.start();
+        recognition.onresult = function(event) {
+            recognition.stop();
+            const command = event.results[0][0].transcript.toLowerCase();
+            if (command.includes("place order")) {
+                resolve("place order");
+            } else {
+                resolve(null);
+            }
+        };
+        recognition.onerror = function() {
+            recognition.stop();
+            resolve(null);
+        };
+    });
+}
+function listenForPaymentMethod() {
+    return new Promise((resolve) => {
+        recognition.start();
+        recognition.onresult = function(event) {
+            recognition.stop();
+            const command = event.results[0][0].transcript.toLowerCase();
+
+            if (command.includes("cash on delivery")) {
+                resolve("cash on delivery");
+            } else if (command.includes("online")) {
+                resolve("online");
+            } else {
+                resolve(null);
+            }
+        };
+        recognition.onerror = function() {
+            recognition.stop();
+            resolve(null);
+        };
+    });
+}
+
 
 
 async function startPaymentProcess(item) {
@@ -257,15 +396,29 @@ async function startPaymentProcess(item) {
 
         const session = await response.json();
         const stripe = Stripe('pk_test_51Qc1LIFlNATJ2G6NFyYOw3u4siqArjmyfq5QPniiRUsVT9MGhKcfYgGwIpMMWkVoOcl3fn0rNk91OqqY57tylBBJ0024trWydJ');
-        console.log(session);
-        const result= await stripe.redirectToCheckout({ sessionId: session.id });
-        console.log(result);
+        const result = await stripe.redirectToCheckout({ sessionId: session.id });
         return true;
     } catch (error) {
         console.error('Payment failed:', error);
         return false;
     }
 }
+function addToCart(name, price, image) {
+    const item = { name, price, image };
+
+    // Add item to the cart array
+    cartItems.push(item);
+    localStorage.setItem('cartItems', JSON.stringify(cartItems));
+
+    // Update cart count
+    cartCount = cartItems.length;
+    localStorage.setItem('cartCount', cartCount);
+    document.getElementById('cart-count').textContent = cartCount;
+
+    // Optionally show a confirmation message
+    speakText(`${name} has been added to your cart.`);
+}
+
 
 
     </script>    
