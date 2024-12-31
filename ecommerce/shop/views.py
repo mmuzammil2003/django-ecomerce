@@ -71,7 +71,11 @@ PRODUCTS = [
     {"name": "search perfumes", "price": "10.00", "image": "/shop/images/perfume.jpg", "description": "A floral perfume with refreshing citrus top notes, creating a vibrant and light fragrance that’s perfect for everyday wear."},
     {"name": "search watch", "price": "20.00", "image": "/shop/images/watch.png", "description": "Fossil analog watch featuring a classic design and precise craftsmanship, combining style with functionality for any occasion."},
     {"name": "search watch", "price": "10.00", "image": "/shop/images/watch2.jpg", "description": "Branded analog watch with a sleek design, offering a timeless look that pairs well with both formal and casual outfits."},
-    {"name": "headphone", "price": "25.0", "image": "/shop/images/headphone.png", "description": "Branded headphones providing high-quality sound and comfort, designed for music lovers and audiophiles who appreciate premium audio performance."}
+    {"name": "headphone", "price": "25.0", "image": "/shop/images/headphone.png", "description": "Branded headphones providing high-quality sound and comfort, designed for music lovers and audiophiles who appreciate premium audio performance."},
+    {"name": "The Psychology of Marketing", "price": "15.0", "image": "/shop/images/book_harindersingh.jpg", "description": "An insightful audiobook by Harinder Singh Pelia that explores how marketers use psychological strategies to influence consumer behavior. Perfect for visually impaired individuals, this audiobook reveals the hidden tricks of marketing through clear and engaging narration, making it accessible to everyone who wants to understand the art of persuasion and buying habits."},
+    {"name": "Talking Clock", "price": "20.0", "image": "/shop/images/talkingclock.jpg", "description": "A convenient and accessible talking clock designed for visually impaired individuals. It announces the time audibly at the press of a button and has an easy-to-use interface with tactile buttons. Ideal for daily use, it also includes alarm and time announcement features for enhanced functionality."}
+
+
 ]
 
 # Search functionality
