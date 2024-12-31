@@ -85,7 +85,7 @@ PRODUCTS = [
     {"name": "Toothpaste", "price": "3.00", "image": "/shop/images/paste.jpg", "description": "A refreshing mint-flavored toothpaste, smooth in texture, with a clean, crisp taste that leaves your mouth feeling fresh. It has a slight cooling sensation and is formulated with fluoride to help protect your teeth from cavities and strengthen enamel. Imagine the feeling of brushing your teeth with a minty breeze, leaving your mouth feeling thoroughly cleansed and invigorated."},
     {"name": "Soap", "price": "2.50", "image": "/shop/images/soap.jpg", "description": "This moisturizing soap is infused with the gentle, calming scent of aloe vera and coconut oil. As you lather it, you can feel the smoothness of the foam gliding over your skin, leaving it soft and hydrated. The soap is creamy and rich, providing a gentle, soothing touch, with a scent that lingers lightly, making your skin feel refreshed and cared for."},
     {"name": "Clothes", "price": "25.00", "image": "/shop/images/clothes1.jpg", "description": "Made of soft, breathable cotton, these clothes offer the perfect balance of comfort and style. The fabric feels light and airy on your skin, allowing you to move freely. Whether you’re wearing a shirt, dress, or pants, the clothes have a relaxed fit, providing ease and flexibility for daily activities. They’re designed with simple, yet elegant lines that hug the body comfortably, giving you a sense of both casual ease and stylish confidence."},
-<<<<<<< HEAD
+
     {"name": "Towel", "price": "8.00", "image": "/shop/images/towel.jpg", "description": "Soft, absorbent cotton towel with a plush texture and reinforced edges for durability."},
 
     {"name": "Nike Shoe", "price": "200.00", "image": "/shop/images/nikeshoe.jpg", "description": "These athletic shoes are perfect for various activities, including running, working out, or casual daily wear. The shoes are lightweight, providing ease of movement, and they feature a cushioned sole that offers excellent support for your feet, reducing fatigue during extended use. The design incorporates three main colors: blue, black, and white, creating a sleek, modern appearance. The upper material is breathable, allowing for airflow to keep your feet cool, while the sole is designed for a firm grip, ensuring safety and stability on different surfaces. Gender: Unisex, crafted for all individuals seeking comfort and performance."},
@@ -99,9 +99,9 @@ PRODUCTS = [
     {"name": "Travel Bag", "price": "150.00", "image": "/shop/images/travelbag.jpg", "description": " This spacious travel bag has a rectangular shape with a structured design, providing ample storage space. Made from durable, water-resistant fabric, it features a sleek exterior with minimalistic lines. The bag includes multiple zippered compartments, including a large main section and smaller pockets for organization. It has sturdy, padded handles and an adjustable shoulder strap, both designed for comfort and ease of carrying. Available in a stylish black or navy blue, it is perfect for both casual and business travel."},
 
 
-=======
+
     {"name": "Towel", "price": "8.00", "image": "/shop/images/towel.jpg", "description": "This towel is made of thick, plush cotton that absorbs moisture quickly, enveloping you in a warm embrace as it touches your skin. The fabric feels soft, yet substantial, with a slight weight that adds a sense of luxury. Its edges are reinforced, making it durable and long-lasting. After a shower, the towel wraps around you, providing comfort and coziness, while the absorbent texture gently dries your body, leaving you feeling refreshed."}
->>>>>>> 2c944eb7f33691208b1880932c70fbf4d7f89bd8
+
 ]
 
 
