@@ -23,111 +23,107 @@
         });
 
         function showCart() {
-    const cartList = document.getElementById('cart-items-list');
-    cartList.innerHTML = '';
+            const cartList = document.getElementById('cart-items-list');
+            cartList.innerHTML = '';
 
-    cartItems.forEach((item, index) => {
-        const listItem = document.createElement('li');
-        listItem.classList.add('list-group-item', 'd-flex', 'align-items-center', 'justify-content-between');
-        listItem.innerHTML = `
-            <div>
-                <img src="${item.image}" alt="${item.name}" style="width: 50px; height: 50px; object-fit: cover; margin-right: 10px;">
-                ${item.name} - $${item.price}
-            </div>
-            <div>
-                <button class="btn btn-success btn-sm me-2" onclick="buyItem(${index})">Buy</button>
-                <button class="btn btn-danger btn-sm" onclick="removeFromCart(${index})">Remove</button>
-            </div>
-        `;
-        cartList.appendChild(listItem);
-    });
-
-    speakText("This is your cart. You can remove or buy items. Say 'remove' to delete an item, 'buy' to purchase it, 'continue' to move to the next item, or 'stop' to end the interaction.");
-    handleCartVoiceInteraction();
-}
-
-
-async function handleCartVoiceInteraction() {
-    let currentIndex = 0;
-
-    async function describeItem() {
-        if (currentIndex >= cartItems.length) {
-            await speakText("You have reviewed all items in your cart.");
-            return;
+            cartItems.forEach((item, index) => {
+                const listItem = document.createElement('li');
+                listItem.classList.add('list-group-item', 'd-flex', 'align-items-center', 'justify-content-between');
+                console.log(item);
+                listItem.innerHTML = `
+                    <div>
+                        <img src="${item.image}" alt="${item.name}" style="width: 50px; height: 50px; object-fit: cover; margin-right: 10px;">
+                        ${item.name} - $${item.price}
+                    </div>
+                    <div>
+                        <button class="btn btn-success btn-sm me-2" onclick="buyItem(${index})">Buy</button>
+                        <button class="btn btn-danger btn-sm" onclick="removeFromCart(${index})">Remove</button>
+                    </div>
+                `;
+                cartList.appendChild(listItem);
+            });
+            speakText("This is your cart. You can remove or buy items. Say 'remove' to delete an item, 'buy' to purchase it, 'continue' to move to the next item, or 'stop' to end the interaction.");
+            handleCartVoiceInteraction();
         }
 
-        const item = cartItems[currentIndex];
-        await speakText(`Item ${currentIndex + 1}: ${item.name}, priced at $${item.price}.`);
-        await speakText("Do you want to continue to the next product, or do you want to delete the current one? If you want to stop, say 'stop'.");
+        async function handleCartVoiceInteraction() {
+            let currentIndex = 0;
 
-        const command = await listenForRemoveOrContinue();
-
-        if (command === "continue") {
-            currentIndex++;
-            await describeItem();
-        } else if (command === "stop") {
-            await speakText("Stopping the interaction.");
-        } else if (command === "error") {
-            await speakText("Command not recognized. Please try again.");
-            await describeItem();
-        }
-    }
-
-    function listenForRemoveOrContinue() {
-        return new Promise((resolve) => {
-            recognition.start();
-
-            recognition.onresult = function (event) {
-                recognition.stop(); // Stop recognition to prevent further events
-                const command = event.results[0][0].transcript.toLowerCase();
-
-                if (command.includes("remove")) {
-                    const item = cartItems[currentIndex];
-                    if (item) {
-                        removeFromCart(currentIndex);
-                        speakText(`${item.name} has been removed.`).then(() => {
-                            resolve("continue"); // Automatically move to the next item after removal
-                        });
-                    } else {
-                        resolve("continue");
-                    }
-                } else if (command.includes("continue")) {
-                    resolve("continue");
-                } else if (command.includes("stop")) {
-                    resolve("stop");
-                } else {
-                    resolve("error");
+            async function describeItem() {
+                if (currentIndex >= cartItems.length) {
+                    await speakText("You have reviewed all items in your cart.");
+                    return;
                 }
-            };
 
-            recognition.onerror = function () {
-                recognition.stop();
-                resolve("error");
-            };
-        });
-    }
+                const item = cartItems[currentIndex];
+                await speakText(`Item ${currentIndex + 1}: ${item.name}, priced at $${item.price}.`);
+                await speakText("Say 'buy' to purchase, 'continue' to move to the next, or 'remove' to delete it. Say 'stop' to end the interaction.");
 
-    function speakText(text) {
-        return new Promise((resolve) => {
-            const speech = new SpeechSynthesisUtterance(text);
-            speech.onend = resolve; // Resolve the promise when speech ends
-            window.speechSynthesis.speak(speech);
-        });
-    }
+                // Wait for speech synthesis to complete before starting voice recognition
+                await waitForSpeechToFinish();
 
-    function removeFromCart(index) {
-        if (index >= 0 && index < cartItems.length) {
-            cartItems.splice(index, 1); // Remove the item from the cart array
-            localStorage.setItem("cartItems", JSON.stringify(cartItems)); // Update the cart in localStorage
-            document.getElementById("cart-count").textContent = cartItems.length; // Update cart count
-            showCart(); // Refresh the cart UI
+                const command = await listenForRemoveOrContinue();
+
+                if (command === "continue") {
+                    currentIndex++;
+                    await describeItem();
+                } else if (command === "stop") {
+                    await speakText("Stopping the interaction.");
+                } else if (command === "buy") {
+                    await buyItem(currentIndex);
+                    speakText("Item purchased.");
+                } else if (command === "error") {
+                    await speakText("Command not recognized. Please try again.");
+                    await describeItem();
+                }
+            }
+
+            function waitForSpeechToFinish() {
+                return new Promise((resolve) => {
+                    const utterance = new SpeechSynthesisUtterance();
+                    utterance.onend = resolve;
+                    window.speechSynthesis.speak(utterance);  // Use an empty utterance to wait for current speech to finish
+                });
+            }
+
+            function listenForRemoveOrContinue() {
+                return new Promise((resolve) => {
+                    recognition.start();
+
+                    recognition.onresult = function (event) {
+                        recognition.stop();
+                        const command = event.results[0][0].transcript.toLowerCase();
+
+                        if (command.includes("remove")) {
+                            const item = cartItems[currentIndex];
+                            if (item) {
+                                removeFromCart(currentIndex);
+                                speakText(`${item.name} has been removed.`).then(() => {
+                                    resolve("continue"); // Automatically move to the next item after removal
+                                });
+                            } else {
+                                resolve("continue");
+                            }
+                        } else if (command.includes("continue")) {
+                            resolve("continue");
+                        } else if (command.includes("buy")) {
+                            resolve("buy");
+                        } else if (command.includes("stop")) {
+                            resolve("stop");
+                        } else {
+                            resolve("error");
+                        }
+                    };
+
+                    recognition.onerror = function () {
+                        recognition.stop();
+                        resolve("error");
+                    };
+                });
+            }
+
+            await describeItem(); // Start describing the items and handle user interaction
         }
-    }
-
-    await describeItem(); // Start describing the items and handle user interaction
-}
-
-
 
         function speakText(text) {
             if (!('speechSynthesis' in window)) {
@@ -145,7 +141,7 @@ async function handleCartVoiceInteraction() {
 
             if (Array.isArray(results) && results.length > 0) {
                 let descriptionText = results.map(result => `Name of the product is ${result.name}: ${result.description}. Price: ${result.price}`).join('. ');
-                speakText(descriptionText + "if you want this product to your cart then say add to cart product name");
+                speakText(descriptionText + " if you want this product to your cart then say, 'add to cart' followed by the product name.");
             } else {
                 speakText("No products found matching your query.");
             }
@@ -158,7 +154,7 @@ async function handleCartVoiceInteraction() {
 
         function processVoiceCommand(command) {
     const commandLower = command.toLowerCase();
-    console.log("Processing command: ", commandLower); // Debugging
+    console.log("Command received:", commandLower);  // Debugging the input command
 
     if (commandLower.includes("back to home")) {
         window.location.href = "{% url 'home' %}";
@@ -178,11 +174,24 @@ async function handleCartVoiceInteraction() {
 
     if (match && match[1]) {
         const productName = match[1].trim();
-        console.log("Looking for product:", productName); // Debugging
-        const results = JSON.parse('{{ results_json|escapejs }}');
-        const product = results.find(item => item.name.toLowerCase().includes(productName.toLowerCase()));
+        console.log("Matched product name:", productName);  // Debugging line
+
+        const results = JSON.parse('{{ results_json|escapejs }}');  // Fetch the results
+        console.log("Available products:", results);  // Debugging line
+
+        // Check if results are empty or undefined
+        if (!results || results.length === 0) {
+            console.log("No products found in results.");
+            speakText("Sorry, no products are available.");
+            return;
+        }
+
+        const product = results.find(item => 
+            item.name.toLowerCase().trim().includes(productName.toLowerCase())
+        );
 
         if (product) {
+            console.log("Product found:", product);  // Debugging line
             addToCart(product.name, product.price, product.image);
             speakText(`${product.name} has been added to your cart.`);
         } else {
@@ -194,213 +203,165 @@ async function handleCartVoiceInteraction() {
 }
 
 
-function startVoiceRecognition() {
-    // Stop any ongoing speech synthesis before starting new voice recognition
-    window.speechSynthesis.cancel();
+        function startVoiceRecognition() {
+            window.speechSynthesis.cancel();
 
-    recognition.start();
-    recognition.onresult = function(event) {
-        const command = event.results[0][0].transcript;
-        processVoiceCommand(command);
-    };
+            recognition.start();
+            recognition.onresult = function (event) {
+                const command = event.results[0][0].transcript;
+                processVoiceCommand(command);
+            };
 
-    recognition.onerror = function(event) {
-        speakText("Sorry, there was an error recognizing your speech.");
-    };
-}
+            recognition.onerror = function (event) {
+                speakText("Sorry, there was an error recognizing your speech.");
+            };
+        }
 
-        let purchasedItems = JSON.parse(localStorage.getItem('purchasedItems')) || []; // Initialize purchased items array
+        async function buyItem(index) {
+            if (index >= 0 && index < cartItems.length) {
+                const item = cartItems[index];
 
+                // Prepare only the required fields: name and price
+                const cleanItem = {
+                    name: item.name,
+                    price: item.price.replace('$', '').trim() // Remove dollar sign from the price if present
+                };
+
+                console.log(cleanItem); // Debugging to confirm the object being sent
+
+                // Ask the user to choose a payment method (Cash on Delivery or Online)
+                speakText("Do you want to pay by Cash on Delivery or Online? Please say 'Cash on Delivery' or 'Online'.");
+                const paymentMethod = await listenForPaymentMethod();
+
+                if (paymentMethod === "cash on delivery") {
+                    await handleCashOnDelivery(cleanItem);
+                    speakText("Your order has been placed with Cash on Delivery.");
+                } else if (paymentMethod === "online") {
+                    const paymentSuccessful = await startPaymentProcess(cleanItem);
+
+                    if (paymentSuccessful) {
+                        // Add the purchased item to the purchasedItems array
+                        purchasedItems.push(cleanItem);
+                        localStorage.setItem('purchasedItems', JSON.stringify(purchasedItems)); // Save to localStorage
+
+                        // Remove the item from the cart
+                        cartItems.splice(index, 1);
+                        localStorage.setItem('cartItems', JSON.stringify(cartItems)); // Update localStorage
+
+                        // Update the UI
+                        document.getElementById('cart-count').textContent = cartItems.length; // Update cart count
+                        showCart(); // Refresh the cart UI
+                        showPurchasedItems(); // Refresh the purchased items UI
+
+                        speakText(`${cleanItem.name} has been successfully purchased.`);
+                    } else {
+                        speakText("Payment was unsuccessful. Please try again.");
+                    }
+                } else {
+                    speakText("Sorry, I didn't understand. Please say 'Cash on Delivery' or 'Online'.");
+                }
+            }
+        }
+
+        async function handleCashOnDelivery(item) {
+            speakText("Please provide your address for Cash on Delivery.");
+
+            const address = await listenForAddress();
+            if (!address) {
+                speakText("Address is missing. Please provide a valid address.");
+                return;
+            }
+
+            speakText("Please provide your contact number.");
+            const contact = await listenForContact();
+            if (!contact) {
+                speakText("Contact number is missing. Please provide a valid contact number.");
+                return;
+            }
+
+            speakText("Please provide your main city.");
+            const city = await listenForCity();
+            if (!city) {
+                speakText("City is missing. Please provide a valid city.");
+                return;
+            }
+
+            speakText("Do you want to place the order? Say 'Place Order' to confirm.");
+            const confirmOrder = await listenForPlaceOrder();
+
+            if (confirmOrder === "place order") {
+                speakText("Your order has been placed successfully.");
+                window.location.href = '/home'; // Redirect to the homepage
+            } else {
+                speakText("Order not placed. Please try again.");
+            }
+        }
+
+        function listenForAddress() {
+            return new Promise((resolve) => {
+                recognition.start();
+                recognition.onresult = function (event) {
+                    recognition.stop();
+                    const address = event.results[0][0].transcript;
+                    resolve(address);
+                };
+                recognition.onerror = function () {
+                    recognition.stop();
+                    resolve(null);
+                };
+            });
+        }
+
+        function listenForContact() {
+            return new Promise((resolve) => {
+                recognition.start();
+                recognition.onresult = function (event) {
+                    recognition.stop();
+                    const contact = event.results[0][0].transcript;
+                    resolve(contact);
+                };
+                recognition.onerror = function () {
+                    recognition.stop();
+                    resolve(null);
+                };
+            });
+        }
+
+        function listenForCity() {
+            return new Promise((resolve) => {
+                recognition.start();
+                recognition.onresult = function (event) {
+                    recognition.stop();
+                    const city = event.results[0][0].transcript;
+                    resolve(city);
+                };
+                recognition.onerror = function () {
+                    recognition.stop();
+                    resolve(null);
+                };
+            });
+        }
+
+        function listenForPlaceOrder() {
+            return new Promise((resolve) => {
+                recognition.start();
+                recognition.onresult = function (event) {
+                    recognition.stop();
+                    const command = event.results[0][0].transcript;
+                    resolve(command.toLowerCase());
+                };
+                recognition.onerror = function () {
+                    recognition.stop();
+                    resolve(null);
+                };
+            });
+        }
         async function buyItem(index) {
     if (index >= 0 && index < cartItems.length) {
         const item = cartItems[index];
-
-        // Prepare only the required fields: name and price
-        const cleanItem = {
-            name: item.name,
-            price: item.price.replace('$', '').trim() // Remove dollar sign from the price if present
-        };
-
-        console.log(cleanItem); // Debugging to confirm the object being sent
-
-        // Ask the user to choose a payment method (Cash on Delivery or Online)
-        speakText("Do you want to pay by Cash on Delivery or Online? Please say 'Cash on Delivery' or 'Online'.");
-        const paymentMethod = await listenForPaymentMethod();
-
-        if (paymentMethod === "cash on delivery") {
-            await handleCashOnDelivery(cleanItem);
-            // No need to say "Payment Successful" for Cash on Delivery
-            speakText("Your order has been placed with Cash on Delivery.");
-        } else if (paymentMethod === "online") {
-            const paymentSuccessful = await startPaymentProcess(cleanItem); // Start the payment process
-
-            if (paymentSuccessful) {
-                // Add the purchased item to the purchasedItems array
-                purchasedItems.push(cleanItem);
-                localStorage.setItem('purchasedItems', JSON.stringify(purchasedItems)); // Save to localStorage
-
-                // Remove the item from the cart
-                cartItems.splice(index, 1);
-                localStorage.setItem('cartItems', JSON.stringify(cartItems)); // Update localStorage
-
-                // Update the UI
-                document.getElementById('cart-count').textContent = cartItems.length; // Update cart count
-                showCart(); // Refresh the cart UI
-                showPurchasedItems(); // Refresh the purchased items UI
-
-                // Speak confirmation for online payment
-                speakText(`${cleanItem.name} has been successfully purchased.`);
-            } else {
-                speakText("Payment was unsuccessful. Please try again.");
-            }
-        } else {
-            speakText("Sorry, I didn't understand. Please say 'Cash on Delivery' or 'Online'.");
-        }
-    }
-}
-async function handleCashOnDelivery(item) {
-    speakText("Please provide your address for Cash on Delivery.");
-
-    const address = await listenForAddress();
-    if (!address) {
-        speakText("Address is missing. Please provide a valid address.");
-        return;
-    }
-
-    speakText("Please provide your contact number.");
-    const contact = await listenForContact();
-    if (!contact) {
-        speakText("Contact number is missing. Please provide a valid contact number.");
-        return;
-    }
-
-    speakText("Please provide your main city.");
-    const city = await listenForCity();
-    if (!city) {
-        speakText("City is missing. Please provide a valid city.");
-        return;
-    }
-
-    speakText("Do you want to place the order? Say 'Place Order' to confirm.");
-    const confirmOrder = await listenForPlaceOrder();
-
-    if (confirmOrder === "place order") {
-        speakText("Your order has been placed successfully.");
-        // Save order details to localStorage or send it to the server
-        // Redirect to the home page after placing the order
-        window.location.href = '/home'; // Redirect to the homepage
-    } else {
-        speakText("Order not placed. Please try again.");
-    }
-}
-function listenForAddress() {
-    return new Promise((resolve) => {
-        recognition.start();
-        recognition.onresult = function(event) {
-            recognition.stop();
-            const address = event.results[0][0].transcript;
-            resolve(address);
-        };
-        recognition.onerror = function() {
-            recognition.stop();
-            resolve(null);
-        };
-    });
-}
-
-function listenForContact() {
-    return new Promise((resolve) => {
-        recognition.start();
-        recognition.onresult = function(event) {
-            recognition.stop();
-            const contact = event.results[0][0].transcript;
-            resolve(contact);
-        };
-        recognition.onerror = function() {
-            recognition.stop();
-            resolve(null);
-        };
-    });
-}
-
-function listenForCity() {
-    return new Promise((resolve) => {
-        recognition.start();
-        recognition.onresult = function(event) {
-            recognition.stop();
-            const city = event.results[0][0].transcript;
-            resolve(city);
-        };
-        recognition.onerror = function() {
-            recognition.stop();
-            resolve(null);
-        };
-    });
-}
-
-function listenForPlaceOrder() {
-    return new Promise((resolve) => {
-        recognition.start();
-        recognition.onresult = function(event) {
-            recognition.stop();
-            const command = event.results[0][0].transcript.toLowerCase();
-            if (command.includes("place order")) {
-                resolve("place order");
-            } else {
-                resolve(null);
-            }
-        };
-        recognition.onerror = function() {
-            recognition.stop();
-            resolve(null);
-        };
-    });
-}
-function listenForPaymentMethod() {
-    return new Promise((resolve) => {
-        recognition.start();
-        recognition.onresult = function(event) {
-            recognition.stop();
-            const command = event.results[0][0].transcript.toLowerCase();
-
-            if (command.includes("cash on delivery")) {
-                resolve("cash on delivery");
-            } else if (command.includes("online")) {
-                resolve("online");
-            } else {
-                resolve(null);
-            }
-        };
-        recognition.onerror = function() {
-            recognition.stop();
-            resolve(null);
-        };
-    });
-}
-
-
-
-async function startPaymentProcess(item) {
-    try {
-        const response = await fetch('/create-checkout-session', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ item })
-        });
-
-        if (!response.ok) {
-            const error = await response.json();
-            console.error('Error:', error.error);
-            return false;
-        }
-
-        const session = await response.json();
-        const stripe = Stripe('pk_test_51Qc1LIFlNATJ2G6NFyYOw3u4siqArjmyfq5QPniiRUsVT9MGhKcfYgGwIpMMWkVoOcl3fn0rNk91OqqY57tylBBJ0024trWydJ');
-        const result = await stripe.redirectToCheckout({ sessionId: session.id });
-        return true;
-    } catch (error) {
-        console.error('Payment failed:', error);
-        return false;
+        console.log("Buying item:", item); // Debugging to confirm which item is selected
+        
+        // Rest of your buyItem code...
     }
 }
 function addToCart(name, price, image) {
@@ -418,9 +379,6 @@ function addToCart(name, price, image) {
     // Optionally show a confirmation message
     speakText(`${name} has been added to your cart.`);
 }
-
-
-
     </script>    
 </head>
 <body>
@@ -504,6 +462,21 @@ function addToCart(name, price, image) {
         <ul id="purchased-items-list" class="list-group">
             <!-- Purchased items will appear here -->
         </ul>
+    </div>
+    
+    <div class="modal fade" id="paymentModal" tabindex="-1" aria-labelledby="paymentModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="paymentModalLabel">Choose Payment Method</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-center">
+                    <button class="btn btn-success mb-3" onclick="handleCashOnDelivery()">Cash on Delivery</button>
+                    <button class="btn btn-primary" onclick="startPaymentProcess(selectedItem)">Online Payment</button>
+                </div>
+            </div>
+        </div>
     </div>
     
 </body>
