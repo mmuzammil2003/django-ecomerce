@@ -251,50 +251,94 @@
         }
 
         async function buyItem(index) {
-            if (index >= 0 && index < cartItems.length) {
-                const item = cartItems[index];
+    stopAllVoiceProcesses(); // Stop all ongoing voice processes
 
-                // Prepare only the required fields: name and price
-                const cleanItem = {
-                    name: item.name,
-                    price: item.price.replace('$', '').trim() // Remove dollar sign from the price if present
-                };
+    if (index >= 0 && index < cartItems.length) {
+        const item = cartItems[index];
 
-                console.log(cleanItem); // Debugging to confirm the object being sent
+        const cleanItem = {
+            name: item.name,
+            price: item.price.replace('$', '').trim(), // Remove dollar sign from price if present
+        };
 
-                // Ask the user to choose a payment method (Cash on Delivery or Online)
-                speakText("Do you want to pay by Cash on Delivery or Online? Please say 'Cash on Delivery' or 'Online'.");
-                const paymentMethod = await listenForPaymentMethod();
+        // Ask for payment method
+        await speakText("Do you want to pay by Cash on Delivery or Online? Please say 'Cash on Delivery' or 'Online'.");
 
-                if (paymentMethod === "cash on delivery") {
-                    await handleCashOnDelivery(cleanItem);
-                    speakText("Your order has been placed with Cash on Delivery.");
-                } else if (paymentMethod === "online") {
-                    const paymentSuccessful = await startPaymentProcess(cleanItem);
+        const paymentMethod = await listenForPaymentMethod();
 
-                    if (paymentSuccessful) {
-                        // Add the purchased item to the purchasedItems array
-                        purchasedItems.push(cleanItem);
-                        localStorage.setItem('purchasedItems', JSON.stringify(purchasedItems)); // Save to localStorage
+        if (paymentMethod === "cash on delivery") {
+            await handleCashOnDelivery(cleanItem);
+            await speakText("Your order has been placed with Cash on Delivery.");
+        } else if (paymentMethod === "online") {
+            const paymentSuccessful = await startPaymentProcess(cleanItem);
 
-                        // Remove the item from the cart
-                        cartItems.splice(index, 1);
-                        localStorage.setItem('cartItems', JSON.stringify(cartItems)); // Update localStorage
-
-                        // Update the UI
-                        document.getElementById('cart-count').textContent = cartItems.length; // Update cart count
-                        showCart(); // Refresh the cart UI
-                        showPurchasedItems(); // Refresh the purchased items UI
-
-                        speakText(`${cleanItem.name} has been successfully purchased.`);
-                    } else {
-                        speakText("Payment was unsuccessful. Please try again.");
-                    }
-                } else {
-                    speakText("Sorry, I didn't understand. Please say 'Cash on Delivery' or 'Online'.");
-                }
+            if (paymentSuccessful) {
+                purchasedItems.push(cleanItem);
+                localStorage.setItem('purchasedItems', JSON.stringify(purchasedItems)); // Save purchased items
+                cartItems.splice(index, 1);
+                localStorage.setItem('cartItems', JSON.stringify(cartItems)); // Update cart items
+                document.getElementById('cart-count').textContent = cartItems.length; // Update UI
+                showCart(); // Refresh cart UI
+                showPurchasedItems(); // Refresh purchased items UI
+                await speakText(`${cleanItem.name} has been successfully purchased.`);
+            } else {
+                await speakText("Payment was unsuccessful. Please try again.");
             }
+        } else {
+            await speakText("Sorry, I didn't understand. Please say 'Cash on Delivery' or 'Online'.");
         }
+    }
+}
+
+function listenForPaymentMethod() {
+    return new Promise((resolve) => {
+        recognition.start(); // Start the speech recognition
+
+        recognition.onresult = function (event) {
+            recognition.stop(); // Stop recognition once a result is obtained
+            const command = event.results[0][0].transcript.toLowerCase();
+
+            // Check for specific keywords
+            if (command.includes("cash on delivery") || command.includes("cash")) {
+                resolve("cash on delivery");
+            } else if (command.includes("online")) {
+                resolve("online");
+            } else {
+                resolve(null); // No valid payment method recognized
+            }
+        };
+
+        recognition.onerror = function () {
+            recognition.stop(); // Stop recognition on error
+            resolve(null); // Resolve with null on error
+        };
+    });
+}
+
+async function startPaymentProcess(item) {
+    try {
+        const response = await fetch('/create-checkout-session', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ item })
+        });
+
+        if (!response.ok) {
+            const error = await response.json();
+            console.error('Error:', error.error);
+            return false;
+        }
+
+        const session = await response.json();
+        const stripe = Stripe('pk_test_51Qc1LIFlNATJ2G6NFyYOw3u4siqArjmyfq5QPniiRUsVT9MGhKcfYgGwIpMMWkVoOcl3fn0rNk91OqqY57tylBBJ0024trWydJ');
+        const result = await stripe.redirectToCheckout({ sessionId: session.id });
+        return true;
+    } catch (error) {
+        console.error('Payment failed:', error);
+        return false;
+    }
+}
+
 
         async function handleCashOnDelivery(item) {
             speakText("Please provide your address for Cash on Delivery.");
@@ -389,14 +433,18 @@
                 };
             });
         }
-        async function buyItem(index) {
-    if (index >= 0 && index < cartItems.length) {
-        const item = cartItems[index];
-        console.log("Buying item:", item); // Debugging to confirm which item is selected
-        
-        // Rest of your buyItem code...
+
+        function stopAllVoiceProcesses() {
+    // Stop speech synthesis
+    if (window.speechSynthesis.speaking) {
+        window.speechSynthesis.cancel();
     }
+
+    // Stop voice recognition
+    recognition.stop();
 }
+
+       
 function addToCart(name, price, image) {
     const item = { name, price, image };
 
@@ -412,6 +460,7 @@ function addToCart(name, price, image) {
     // Optionally show a confirmation message
     speakText(`${name} has been added to your cart.`);
 }
+
     </script>    
 </head>
 <body>
