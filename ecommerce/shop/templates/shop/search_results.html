@@ -21,6 +21,30 @@
         document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('cart-count').textContent = cartCount;
         });
+        function removeFromCart(index) {
+    // Remove the item at the specified index
+    cartItems.splice(index, 1);
+
+    // Update the cart count
+    cartCount = cartItems.length;
+    localStorage.setItem('cartCount', cartCount);
+
+    // Update the cart items in localStorage
+    localStorage.setItem('cartItems', JSON.stringify(cartItems));
+
+    // Update the displayed cart count on the page
+    document.getElementById('cart-count').textContent = cartCount;
+
+    // Re-render the cart items
+    showCart();
+
+    // Optional: Speak the confirmation
+    speakText("The item has been removed from your cart. You can continue, buy another item, or stop.");
+
+    // Start listening for the next command after removal
+    handleCartVoiceInteraction();  // This will re-enable the voice interaction
+}
+
 
         function showCart() {
             const cartList = document.getElementById('cart-items-list');
@@ -50,33 +74,42 @@
             let currentIndex = 0;
 
             async function describeItem() {
-                if (currentIndex >= cartItems.length) {
-                    await speakText("You have reviewed all items in your cart.");
-                    return;
-                }
+    if (currentIndex >= cartItems.length) {
+        await speakText("You have reviewed all items in your cart.");
+        return;
+    }
 
-                const item = cartItems[currentIndex];
-                await speakText(`Item ${currentIndex + 1}: ${item.name}, priced at $${item.price}.`);
-                await speakText("Say 'buy' to purchase, 'continue' to move to the next, or 'remove' to delete it. Say 'stop' to end the interaction.");
+    const item = cartItems[currentIndex];
+    console.log(`Describing item at index ${currentIndex}:`, item); // Debugging
 
-                // Wait for speech synthesis to complete before starting voice recognition
-                await waitForSpeechToFinish();
+    await speakText(`Item ${currentIndex + 1}: ${item.name}, priced at $${item.price}.`);
+    await speakText("Buy or remove or stop");
 
-                const command = await listenForRemoveOrContinue();
+    await waitForSpeechToFinish();
 
-                if (command === "continue") {
-                    currentIndex++;
-                    await describeItem();
-                } else if (command === "stop") {
-                    await speakText("Stopping the interaction.");
-                } else if (command === "buy") {
-                    await buyItem(currentIndex);
-                    speakText("Item purchased.");
-                } else if (command === "error") {
-                    await speakText("Command not recognized. Please try again.");
-                    await describeItem();
-                }
-            }
+    const command = await listenForRemoveOrContinue();
+    console.log("User command:", command); // Debugging
+
+    if (command === "continue") {
+        currentIndex++;
+        await describeItem();
+    } else if (command === "stop") {
+        await speakText("Stopping the interaction.");
+
+    }  
+    else if ( command=== "remove")
+    {
+        await removeFromCart(currentIndex);
+    }
+    else if (command === "buy") {
+        console.log("Invoking buyItem for index:", currentIndex); // Debugging
+        await buyItem(currentIndex);
+    } else if (command === "error") {
+        await speakText("Command not recognized. Please try again.");
+        await describeItem();
+    }
+}
+
 
             function waitForSpeechToFinish() {
                 return new Promise((resolve) => {
@@ -101,9 +134,8 @@
                                 speakText(`${item.name} has been removed.`).then(() => {
                                     resolve("continue"); // Automatically move to the next item after removal
                                 });
-                            } else {
-                                resolve("continue");
-                            }
+                            } 
+                            
                         } else if (command.includes("continue")) {
                             resolve("continue");
                         } else if (command.includes("buy")) {
@@ -191,8 +223,9 @@
         );
 
         if (product) {
-            console.log("Product found:", product);  // Debugging line
-            addToCart(product.name, product.price, product.image);
+            console.log("Product found:", product);
+            const staticUrl = `/static${product.image}`;  // Debugging line
+            addToCart(product.name, product.price,  staticUrl);
             speakText(`${product.name} has been added to your cart.`);
         } else {
             speakText("Sorry, I couldn't find that product.");
