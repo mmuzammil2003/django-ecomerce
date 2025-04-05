@@ -1,2 +1,2 @@
 # Voice Driven E-Commerce
-ecommerce website built with django framwork which consists of automation services
+ecommerce website built with django framwork having voice accecibilty for physically disabled people
